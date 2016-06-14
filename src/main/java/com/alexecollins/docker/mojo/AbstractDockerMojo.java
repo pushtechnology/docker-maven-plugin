@@ -129,24 +129,6 @@ abstract class AbstractDockerMojo extends AbstractMojo {
     private String cfgPath;
 
     /**
-     * Resource to copy out of the docker container.
-     */
-    @Parameter(property = "docker.resource")
-    private String resource;
-
-    /**
-     * Resource to copy out of the docker container.
-     */
-    @Parameter(property = "docker.targetPath")
-    private String targetPath;
-
-    /**
-     * Clean container only in clean.
-     */
-    @Parameter(defaultValue = "false", property = "docker.cleanContainerOnly")
-    private boolean cleanContainerOnly;
-
-    /**
      * Do auto detection on the docker version.
      */
     @Parameter(defaultValue = "true", property = "docker.versionAutoDetect")
@@ -179,6 +161,7 @@ abstract class AbstractDockerMojo extends AbstractMojo {
             getLog().info("Docker version " + docker.versionCmd().exec().getVersion());
             doExecute(dockerOrchestrator(properties, docker));
         } catch (Exception e) {
+            e.printStackTrace();
             throw new MojoExecutionException(e.getMessage(), e);
         }
     }
@@ -297,15 +280,5 @@ abstract class AbstractDockerMojo extends AbstractMojo {
 
     protected abstract void doExecute(DockerOrchestrator orchestrator) throws Exception;
 
-    public boolean isCleanContainerOnly() {
-        return cleanContainerOnly;
-    }
 
-    public String getResource() {
-        return resource;
-    }
-
-    public String getTargetPath() {
-        return targetPath;
-    }
 }

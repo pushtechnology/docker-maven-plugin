@@ -8,7 +8,9 @@ Goals
 * `start` - start the containers in order and ensures they are running
 * `stop` - stop all running containers for the project
 * `deploy` - push containers to Docker repository
+* `copy` - copy resources from a Docker container
 * `save` - save images to file, optionally deploy to Maven repository
+* `log` - save logs.
 
 Pre-requisites
 ---
@@ -109,8 +111,9 @@ Add the following to the `pom.xml` plugins section.
         <!-- out of the box, you shoud not need to have these, as they'll use sensible defaults -->
         <!-- (optional) your installed version -->
         <version>1.13</version>
-        <!-- (optional) if you want to push to a private repo -->
+        <!-- (optional) if you want to push to a private repo, all of these are required if using artifactory -->
         <username>alexec</username>
+        <password>password</password>
         <email>alex.e.c@gmail.com</email>
         <serverAddress>https://index.docker.io/v1/</serverAddress>
         <!-- (optional) change here if you are using another port/host, e.g. 4243 -->
@@ -215,3 +218,12 @@ healthChecks:
 ```
 
 This can be turned off by set `exposeContainerIp` to `false` in `conf.yml`
+
+Copy resources from a docker container
+---
+
+The copy command allows you to extract resources from your docker container, allowing you to use docker as a build engine from within maven.
+The resources to copy are specified by `source` and the location to copy to by `dest`. If `source` is a directory then the directory
+contents will be copied. `dest` can be a file or directory, if a directory then the resource names will be preserved.
+
+
