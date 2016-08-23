@@ -5,11 +5,11 @@ import com.alexecollins.docker.orchestration.ExcludeFilter;
 import com.alexecollins.docker.orchestration.model.BuildFlag;
 import com.alexecollins.docker.util.MavenLogAppender;
 import com.github.dockerjava.api.DockerClient;
-import com.github.dockerjava.api.DockerException;
 import com.github.dockerjava.api.command.VersionCmd;
+import com.github.dockerjava.api.exception.DockerException;
 import com.github.dockerjava.api.model.Version;
+import com.github.dockerjava.core.DefaultDockerClientConfig;
 import com.github.dockerjava.core.DockerClientBuilder;
-import com.github.dockerjava.core.DockerClientConfig;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
@@ -49,19 +49,19 @@ abstract class AbstractDockerMojo extends AbstractMojo {
     private String version;
 
     /**
-     * Docker username (for deploy).
+     * Docker username (for a remote registry).
      */
     @Parameter(property = "docker.username", defaultValue = "${user.name}")
     private String username;
 
     /**
-     * Docker username (for deploy).
+     * Docker username (for a remote registry).
      */
     @Parameter(property = "docker.password")
     private String password;
 
     /**
-     * Docker repository server (for deploy).
+     * Docker registry server (for deploy).
      */
     @Parameter(property = "docker.serverAddress")
     private String serverAddress;
@@ -123,16 +123,12 @@ abstract class AbstractDockerMojo extends AbstractMojo {
     private String certificatePath;
 
     /**
-     * Specify the docker configuration path. Defaults to not being set
+     * Specify the docker configuration path. Defaults to not being set.
+     * Will look for a file called .dockercfg in the given path for
+     * authentication.
      */
     @Parameter(property = "docker.cfgPath")
     private String cfgPath;
-
-    /**
-     * Clean container only in clean.
-     */
-    @Parameter(defaultValue = "false", property = "docker.cleanContainerOnly")
-    private boolean cleanContainerOnly;
 
     /**
      * Do auto detection on the docker version.
@@ -167,6 +163,7 @@ abstract class AbstractDockerMojo extends AbstractMojo {
             getLog().info("Docker version " + docker.versionCmd().exec().getVersion());
             doExecute(dockerOrchestrator(properties, docker));
         } catch (Exception e) {
+            e.printStackTrace();
             throw new MojoExecutionException(e.getMessage(), e);
         }
     }
@@ -205,30 +202,30 @@ abstract class AbstractDockerMojo extends AbstractMojo {
     }
 
     private DockerClient dockerClient() throws DockerException {
-        DockerClientConfig.DockerClientConfigBuilder builder = DockerClientConfig.createDefaultConfigBuilder();
+        DefaultDockerClientConfig.Builder builder = DefaultDockerClientConfig.createDefaultConfigBuilder();
         if (host != null) {
-            builder = builder.withUri(host);
+            builder = builder.withDockerHost(host);
         }
         if (version != null) {
-            builder = builder.withVersion(version);
+            builder = builder.withApiVersion(version);
         }
         if (username != null) {
-            builder = builder.withUsername(username);
+            builder = builder.withRegistryUsername(username);
         }
         if (password != null) {
-            builder = builder.withPassword(password);
+            builder = builder.withRegistryPassword(password);
         }
         if (email != null) {
-            builder = builder.withEmail(email);
+            builder = builder.withRegistryEmail(email);
         }
         if (serverAddress != null) {
-            builder = builder.withServerAddress(serverAddress);
+            builder = builder.withRegistryUrl(serverAddress);
         }
         if (certificatePath != null) {
             builder = builder.withDockerCertPath(certificatePath);
         }
         if (cfgPath != null) {
-            builder = builder.withDockerCfgPath(cfgPath);
+            builder = builder.withDockerConfig(cfgPath);
         }
 
         if (versionAutoDetect) {
@@ -236,7 +233,7 @@ abstract class AbstractDockerMojo extends AbstractMojo {
             final VersionCmd versionCmd = initialClient.versionCmd();
             final Version version = versionCmd.exec();
 
-            builder = builder.withVersion(version.getApiVersion());
+            builder = builder.withApiVersion(version.getApiVersion());
 
             return DockerClientBuilder.getInstance(builder.build()).build();
         } else {
@@ -285,7 +282,5 @@ abstract class AbstractDockerMojo extends AbstractMojo {
 
     protected abstract void doExecute(DockerOrchestrator orchestrator) throws Exception;
 
-    public boolean isCleanContainerOnly() {
-        return cleanContainerOnly;
-    }
+
 }
